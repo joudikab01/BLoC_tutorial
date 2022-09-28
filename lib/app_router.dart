@@ -6,6 +6,7 @@ import '../../presentation/screens/characters_details.dart';
 import '../../presentation/screens/characters_screen.dart';
 import 'package:flutter/material.dart';
 
+import 'data/models/characters.dart';
 import 'data/web_services/characters_web_services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -23,12 +24,13 @@ class AppRouter {
       case charactersScreen:
         return MaterialPageRoute(
             builder: (_) => BlocProvider(
-                  create: (BuildContext context) =>
-                      charactersCubit,
+                  create: (BuildContext context) => charactersCubit,
                   child: const CharactersScreen(),
                 ));
       case characterDetailsScreen:
-        return MaterialPageRoute(builder: (_) => CharacterDetailsScreen());
+        final character = settings.arguments as Character;
+        return MaterialPageRoute(
+            builder: (_) => CharacterDetailsScreen(character: character));
     }
   }
 }

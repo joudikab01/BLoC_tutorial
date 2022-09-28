@@ -15,12 +15,92 @@ class CharactersScreen extends StatefulWidget {
 
 class _CharactersScreenState extends State<CharactersScreen> {
   late List<Character> allCharacters;
+  late List<Character> searchedForCharacters;
+  bool _isSearching = false;
+  final TextEditingController _searchTextController = TextEditingController();
+
+  Widget _buildSearchField() {
+    return TextField(
+      controller: _searchTextController,
+      cursorColor: MyColors.myGrey,
+      decoration: const InputDecoration(
+        hintText: 'Find a character...',
+        border: InputBorder.none,
+        hintStyle: TextStyle(
+          color: MyColors.myGrey,
+          fontSize: 18,
+        ),
+      ),
+      style: const TextStyle(
+        color: MyColors.myGrey,
+        fontSize: 18,
+      ),
+      onChanged: (searchedCharacter) {
+        addSearchedForItemsToSearchedList(searchedCharacter);
+      },
+    );
+  }
+
+  void addSearchedForItemsToSearchedList(String searchedCharacter) {
+    searchedForCharacters = allCharacters
+        .where((character) =>
+            character.name.toLowerCase().startsWith(searchedCharacter))
+        .toList();
+    setState(() {});
+  }
+
+  List<Widget> _buildAppBarActions() {
+    if (_isSearching) {
+      return [
+        IconButton(
+          onPressed: () {
+            _clearSearch();
+            Navigator.pop(context);
+          },
+          icon: const Icon(
+            Icons.clear,
+            color: MyColors.myGrey,
+          ),
+        ),
+      ];
+    } else {
+      return [
+        IconButton(
+          onPressed: _startSearch,
+          icon: const Icon(
+            Icons.search,
+            color: MyColors.myGrey,
+          ),
+        ),
+      ];
+    }
+  }
+
+  void _startSearch() {
+    ModalRoute.of(context)!
+        .addLocalHistoryEntry(LocalHistoryEntry(onRemove: _stopSearching));
+    setState(() {
+      _isSearching = true;
+    });
+  }
+
+  void _stopSearching() {
+    _clearSearch();
+    setState(() {
+      _isSearching = false;
+    });
+  }
+
+  void _clearSearch() {
+    setState(() {
+      _searchTextController.clear();
+    });
+  }
 
   @override
   void initState() {
     super.initState();
-    allCharacters =
-        BlocProvider.of<CharactersCubit>(context).getAllCharacters();
+    BlocProvider.of<CharactersCubit>(context).getAllCharacters();
   }
 
   Widget buildBlocWidget() {
@@ -36,7 +116,7 @@ class _CharactersScreenState extends State<CharactersScreen> {
   }
 
   Widget showLoadingIndicator() {
-    return Center(
+    return const Center(
       child: CircularProgressIndicator(
         color: MyColors.myYellow,
       ),
@@ -58,19 +138,34 @@ class _CharactersScreenState extends State<CharactersScreen> {
 
   Widget buildCharactersList() {
     return GridView.builder(
-        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 2,
           childAspectRatio: 2 / 3,
           crossAxisSpacing: 1,
           mainAxisSpacing: 1,
         ),
-        shrinkWrap:  true,
+        shrinkWrap: true,
         physics: const ClampingScrollPhysics(),
         padding: EdgeInsets.zero,
-        itemCount:  allCharacters.length,
+        itemCount: _searchTextController.text.isNotEmpty
+            ? searchedForCharacters.length
+            : allCharacters.length,
         itemBuilder: (context, index) {
-          return CharacterItem(character: allCharacters[index],);
+          return CharacterItem(
+            character: _searchTextController.text.isNotEmpty
+                ? searchedForCharacters[index]
+                : allCharacters[index],
+          );
         });
+  }
+
+  Widget buildAppBarTitle() {
+    return Text(
+      'Characters',
+      style: TextStyle(
+        color: MyColors.myGrey,
+      ),
+    );
   }
 
   @override
@@ -78,14 +173,21 @@ class _CharactersScreenState extends State<CharactersScreen> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: MyColors.myYellow,
-        title: Text(
-          'Characters',
-          style: TextStyle(
-            color: MyColors.myGrey,
-          ),
-        ),
+        leading: _isSearching
+            ? BackButton(
+                color: MyColors.myGrey,
+              )
+            : Container(),
+        title: _isSearching ? _buildSearchField() : buildAppBarTitle(),
+        actions: _buildAppBarActions(),
       ),
       body: buildBlocWidget(),
     );
+  }
+
+  @override
+  void dispose() {
+    _searchTextController.dispose();
+    super.dispose();
   }
 }
