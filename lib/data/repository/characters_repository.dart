@@ -1,5 +1,6 @@
 import '../../data/web_services/characters_web_services.dart';
 import '../models/characters.dart';
+import '../models/quotes.dart';
 
 class CharactersRepository {
   final CharactersWebServices charactersWebServices;
@@ -9,5 +10,9 @@ class CharactersRepository {
     return characters
         .map((character) => Character.fromJson(character))
         .toList();
+  }
+  Future<List<Quotes>> getCharacterQuotes(String charName) async {
+    final quotes = await charactersWebServices.getCharacterQuotes(charName);
+    return quotes.map((charQuotes) => Quotes.fromJson(charQuotes)).toList();
   }
 }
